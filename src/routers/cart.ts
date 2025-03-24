@@ -1,52 +1,72 @@
 import { randomUUIDv7 } from "bun"
-import { Elysia, t } from "elysia"
+
+import { Hono } from "hono"
+import { getCookie, setCookie } from "hono/cookie"
+import { zValidator } from "@hono/zod-validator"
 
 import { eq } from "drizzle-orm"
+import { z } from "zod"
 
 import { db } from "@/drizzle/db"
 import { carts } from "@/drizzle/schema"
 
-export const cartRouter = new Elysia({
-  prefix: "/cart",
-})
-  .guard({
-    cookie: t.Optional(
-      t.Object({
-        cartId: t.Optional(t.String()),
-      })
-    ),
-  })
-  .get("", async ({ cookie }) => {
-    const cartId = cookie.cartId.value
+export const cartRouter = new Hono()
+  .get("/", async (c) => {
+    const cartId = getCookie(c, "cartId")
+
+    console.log("cartId", cartId)
 
     if (!cartId) {
       const cartId = randomUUIDv7()
 
-      await db.insert(carts).values({ id: cartId, items: [] })
+      const cart = await db
+        .insert(carts)
+        .values({ id: cartId, items: [] })
+        .returning()
 
-      cookie.cartId.set({ value: cartId, domain: "localhost" })
+      setCookie(c, "cartId", cartId)
 
-      return []
+      return c.json(cart)
     }
 
-    if (cartId) {
-      return db.query.carts.findFirst({
-        where: (table, { eq }) => eq(table.id, cartId),
+    const cart = await db.query.carts.findFirst({
+      where: (table, { eq }) => eq(table.id, cartId),
+    })
+
+    if (!cart) {
+      setCookie(c, "cartId", "", {
+        expires: new Date(0),
       })
+
+      throw new Error("Cart not found")
     }
+
+    return c.json(cart)
   })
   .post(
     "/add",
-    async ({ cookie, body }) => {
-      let cartId = cookie.cartId.value
+    zValidator(
+      "json",
+      z.object({
+        productId: z.number(),
+        quantity: z.number(),
+      })
+    ),
+    async (c) => {
+      const body = c.req.valid("json")
+      const cartId = getCookie(c, "cartId")
 
       if (!cartId) {
-        cartId = randomUUIDv7()
+        const cartId = randomUUIDv7()
 
-        await db.insert(carts).values({ id: cartId, items: [] })
+        const cart = await db
+          .insert(carts)
+          .values({ id: cartId, items: [body] })
+          .returning()
 
-        cookie.cartId.set({ value: cartId })
-        console.log("cookie set")
+        setCookie(c, "cartId", cartId)
+
+        return c.json(cart)
       }
 
       console.log("cartId", cartId)
@@ -56,8 +76,7 @@ export const cartRouter = new Elysia({
       })
 
       if (!cart) {
-        cookie.cartId.set({
-          value: "",
+        setCookie(c, "cartId", "", {
           expires: new Date(0),
         })
 
@@ -80,12 +99,6 @@ export const cartRouter = new Elysia({
         .where(eq(carts.id, cartId))
         .returning()
 
-      return newState
-    },
-    {
-      body: t.Object({
-        productId: t.Number(),
-        quantity: t.Number(),
-      }),
+      return c.json(newState)
     }
   )

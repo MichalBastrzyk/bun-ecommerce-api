@@ -1,19 +1,20 @@
-import { edenFetch } from "@elysiajs/eden"
+import { hc } from "hono/client"
 
-import type { App } from "@/index"
+import type { AppType } from "./src"
 
-const $fetch = edenFetch<App>("http://localhost:4000")
-
-const result = await $fetch("/cart", { method: "GET" })
-
-console.log("result", result)
-
-const addingResult = await $fetch("/cart/add", {
-  method: "POST",
-  body: {
-    productId: 123,
-    quantity: 1,
+const client = hc<AppType>("http://localhost:4000", {
+  init: {
+    credentials: "include",
   },
 })
 
-console.log("addingResult", addingResult)
+const res = await client.cart.add.$post({
+  json: {
+    productId: 1,
+    quantity: 2,
+  },
+})
+
+const json = await res.json()
+
+console.log("result", json)

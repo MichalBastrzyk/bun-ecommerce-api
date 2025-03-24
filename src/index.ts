@@ -1,18 +1,17 @@
-import { Elysia } from "elysia"
-import { cors } from "@elysiajs/cors"
-import { swagger } from "@elysiajs/swagger"
+import { Hono } from "hono"
+import { cors } from "hono/cors"
+import { logger } from "hono/logger"
 
-import { cartRouter } from "@/routers/cart"
+import { cartRouter } from "./routers/cart"
 
-const app = new Elysia()
-  .use(cors())
-  .use(swagger())
-  .use(cartRouter)
-  .get("/", () => "Hello Elysia")
-  .listen(4000)
+const app = new Hono()
+  .use(cors({ origin: "http://localhost:3000", credentials: true }))
+  .use(logger())
+  .route("cart", cartRouter)
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-)
+export default {
+  fetch: app.fetch,
+  port: 4000,
+}
 
-export type App = typeof app
+export type AppType = typeof app

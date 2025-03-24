@@ -10,11 +10,11 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.2.0",
-    "@elysiajs/eden": "^1.2.0",
-    "@elysiajs/swagger": "^1.2.2",
+    "@hono/zod-validator": "^0.4.3",
     "drizzle-orm": "^0.41.0",
-    "elysia": "^1.2.25"
+    "elysia": "^1.2.25",
+    "hono": "^4.7.5",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",

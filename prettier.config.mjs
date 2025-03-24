@@ -9,8 +9,9 @@ const config = {
 
   importOrder: [
     "^(bun/(.*)$)|^(bun$)",
-    "^(elysia/(.*)$)|^(elysia$)",
-    "^(@elysiajs/(.*)$)|^(@elysiajs$)",
+    "",
+    "^(hono/(.*)$)|^(hono$)",
+    "^(@hono/(.*)$)|^(@hono$)",
     "",
     "<THIRD_PARTY_MODULES>",
     "",
